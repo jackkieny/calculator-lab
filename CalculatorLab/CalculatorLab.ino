@@ -162,8 +162,6 @@ bool flag = false;
  //  }
 /*** MAIN LOOP***/
 void loop(){
-
-  Serial.print(digitalRead(A5));
   Serial.print(digitalRead(A4));
   if (digitalRead(A5)){
     display_array(error_array);
