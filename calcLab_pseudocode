@@ -1,0 +1,85 @@
+/*** SETUP/INITIALIZE ***/
+
+init{
+  operand1 = 0
+  operand2 = null
+  arithOperator = null
+}
+
+/*** NEGATE VALUE BEING DISPLAYED ***/
+if (left_button_pushed){
+    negCurrValue()
+}
+
+/*** RIGHT BUTTON PUSHED ***/
+if(right_button_pushed){
+
+  // Current operand is 2
+  if(curr_op == operand2){
+    operand2 = null;
+    arithOperator = null;
+    display(operand1);
+  }
+
+  // current operand is 1
+  if(curr_op == operand1){
+    operand1 = 0;
+    arithOperator = null;
+    display(operand1);
+  }
+}
+
+/*** DISPLAY TIMEOUT ***/
+// This only turns off the display
+// This does NOT clear the values of op1, op2, or arithOp
+// Not allowed to place the device in sleep or idle mode
+// When the device gets woken up the key press to wake it does nothing
+if (left_switch = left_pos){
+  timeOut = 30 sec
+else{
+  timeOut = 5 sec
+  }
+}
+
+
+/*** CHECK INPUT ***/
+switch (input){
+    case 0-9:
+      check if operand1 is set
+        if(not){
+          operand1 = input
+        }else{
+          operand2 =
+        }
+
+    case A:
+      arithOperator = "+" // Key 'A'
+      curr_op = operand2  // Switch to operand2
+
+    case B:
+      arithOperator = "-" // Key 'B'
+      curr_op = operand2
+
+    case C:
+      arithOperator = "*" // Key 'C'
+      curr_op = operand2
+
+    case D:
+      arithOperator = "/" // Key 'D'
+      curr_op = operand2
+
+    case #:               // Key '#'
+      if(operand2==null)
+        operand2 = operand1 // if op2 is not set then it gets set to what op1 is
+
+      operand1 = operand1 {arithOperator} operand2 // perform equiation
+      displayOperand1() // display the solution, as operand1
+      operand2 = null // Reset op2 to null
+      arithOperator = null // Reset arithOp to null
+
+
+    case
+}
+
+// If the op1 {arithOp} op2 is too big to display, display(Error)
+// If arithOp = '/' and op2 = 0, display(Error)
