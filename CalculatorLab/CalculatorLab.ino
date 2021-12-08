@@ -30,6 +30,9 @@ uint8_t error_array[8] = {0x05, 0x1D, 0x05, 0x05, 0x4F, 0x0, 0x0, 0x0}; // 'rorr
 volatile long now = 0;
 volatile long last_button_press = 0 ;
 volatile long last_keypad_press = 0;
+volatile int timer = 0;
+
+bool awake = true;
 
 /*** DECLARE FUNCTIONS***/
 void setup_hardware();
@@ -46,6 +49,7 @@ void clear_dispay_array(uint8_t array[]);
 void negate_operand(uint8_t array[]);
 void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp);
 void convert_res_to_array(int result, bool is_negative);
+void handle_div_by_0();
 
 
 /*** SETUP ***/
@@ -55,6 +59,7 @@ void setup(){
   setup_timer();
   setup_hardware_interrupts();
   display_data(1, 0x7E);
+  awake = true;
 }
 
 /*** FUNCTIONS ***/
@@ -170,6 +175,12 @@ void setup_hardware_interrupts(){
 }
 
 void check_buttons(){
+  if(!awake){
+    awake = true;
+    return; //do nothing
+  }
+
+  timer = 0;
   now = millis();
   if (now-last_button_press > 250){
     last_button_press = now;
@@ -201,6 +212,12 @@ void check_buttons(){
 }
 
 void check_keypad(){
+  if(!awake){
+    awake = true;
+    return; //do nothing
+  }
+
+  timer = 0;
   now = millis();
   if(now-last_keypad_press > 250){
     last_keypad_press = now;
@@ -272,6 +289,14 @@ void add_value_to_array(uint8_t value, uint8_t array[]){
   }
   array[0] = value;
   return;
+}
+
+void handle_div_by_0(){
+  clear_dispay_array(operand1);
+  operand1[0] = 0x7E;
+  clear_dispay_array(operand2);
+  arithmeticOperator = 0x0;
+  display_error();
 }
 
 void convert_res_to_array(int result, bool is_negative){
@@ -362,21 +387,28 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     if(result != abs(result)){is_negative=true;}
     convert_res_to_array(result, is_negative);
   }else if(arithOp==0xD){
-    result = valA / valB;
-    if(result != abs(result)){is_negative=true;}
-    convert_res_to_array(result, is_negative);
+    if(valB==0){
+      handle_div_by_0();
+    }else{
+      result = valA / valB;
+      if(result != abs(result)){is_negative=true;}
+      convert_res_to_array(result, is_negative);
+    }
   }
   return;
 }
 
-int count = 0;
-
 ISR(TIMER1_COMPA_vect){
-  // count++;
-  // Serial.print("IRS count: ");
-  // Serial.print(count);
-  // Serial.print("\n");
-
+  timer++;
+  Serial.println(timer);
+  if(timer==30 && !digitalRead(A4)){
+    awake = false;
+    clear_display();
+  }
+  else if(timer == 5 && digitalRead(A4)){
+    awake = false;
+    clear_display();
+  }
  }
 
 
