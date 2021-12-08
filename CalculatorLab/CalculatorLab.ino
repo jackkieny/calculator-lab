@@ -22,7 +22,7 @@ const uint8_t seven_segments[16] = {
 };
 
 uint8_t operand1[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-uint8_t operand2[8];
+uint8_t operand2[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 uint8_t arithmeticOperator = 0x0;
 uint8_t empty_disp[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}; //'xxxxxxxx'
 uint8_t error_array[8] = {0x05, 0x1D, 0x05, 0x05, 0x4F, 0x0, 0x0, 0x0}; // 'rorrExxx'
@@ -43,6 +43,7 @@ void check_keypad();
 void add_value_to_array(uint8_t value, uint8_t array[]);
 void clear_dispay_array(uint8_t array[]);
 void negate_operand(uint8_t array[]);
+
 
 /*** SETUP ***/
 void setup(){
@@ -233,12 +234,12 @@ void check_keypad(){
     }
 
     if(key_pressed>=0 && key_pressed<=9){
-      if (arithmeticOperator==0x0){
+      if (arithmeticOperator==0x0 && operand1[7] == 0x0){
         //add to op 1
         add_value_to_array(seven_segments[key_pressed], operand1);
         display_array(operand1);
       }
-      else{
+      else if(operand2[7] == 0x0){
         //add to op 2
         add_value_to_array(seven_segments[key_pressed], operand2);
       }
@@ -253,6 +254,8 @@ void check_keypad(){
 
   return;
 }
+
+
 
 void add_value_to_array(uint8_t value, uint8_t array[]){
 
