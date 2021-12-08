@@ -34,6 +34,7 @@ void display_data();
 void display_array();
 void clear_display();
 void display_error();
+//void check();
 
 /*** SETUP ***/
 void setup(){
@@ -83,15 +84,15 @@ void setup_timer(){
   TCCR1B = 0;
   TCNT1 = 0;
 
-  // Set compare match register to 5kHz, must be < 65535
+  // Set compare match register, must be < 65535
   OCR1A = 15625; // 16000000 / 1024 = 15625
 
   // Enable CTC mode
-  TCCR1A |= (1 << WGM12);
+  TCCR1B |= (1 << WGM12);
 
   // Set prescalar to 1024
-  TCCR1A |= (1 << CS10);
-  TCCR1A |= (1 << CS12);
+  TCCR1B |= (1 << CS10);
+  TCCR1B |= (1 << CS12);
 
   // Enable reset timer on interrupt
   TIMSK1 |= (1 << OCIE1A);
@@ -126,21 +127,31 @@ void display_error(){
 }
 
 int count = 0;
+
 ISR(TIMER1_COMPA_vect){
   count++;
-  if(count=5){
-    display_array(error_array);
+  Serial.print("IRS count: ");
+  Serial.print(count);
+  Serial.print("\n");
+  bool left_switch = digitalRead(A4);
+  if(!left_switch && count==30){  //When left switch toggle left & 30 sec have passed
+    clear_display();
     count = 0;
+    delay(2000);
   }
+  else if(left_switch && count==5){ //When left switch toggle right & 5 sec have passed
+    clear_display();
+    count = 0;
+    delay(2000);
+  }
+  display_error();
  }
+
+
 /*** MAIN LOOP***/
 void loop(){
-//   Serial.print(digitalRead(A4));
-//   if (digitalRead(A5)){
-//     display_array(error_array);
-//   }else{
-//     clear_display();
-//   }
-//   delay(250);
-
+  // Serial.print("Timer: ");
+  // Serial.print(count);
+  // Serial.print("\n");
+  // delay(250);
 }
