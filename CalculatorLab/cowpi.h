@@ -43,7 +43,7 @@ uint8_t * const IObase = (uint8_t *)0x20;
  * Asynchronous Status Register (Timer2 only)               uint8_t at IObase + 0x96 (0xB6)
  * * ASSR
  */
-/*
+
 struct gpio_registers {
   volatile uint8_t input;                   // PINx
   volatile uint8_t direction;               // DDRx
@@ -55,7 +55,7 @@ struct spi_registers {
   volatile uint8_t status;                  // SPSR
   volatile uint8_t data;                    // SPDR
 };
-*/
+
 struct i2c_registers {
   volatile uint8_t bit_rate;                // TWBR
   volatile uint8_t status;                  // TWSR
