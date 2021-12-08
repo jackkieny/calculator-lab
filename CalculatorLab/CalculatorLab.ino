@@ -10,10 +10,10 @@
 
 /*** INITIALIZE ***/
 const uint8_t keys[4][4] = {
-  {0x1, 0x2, 0x3, 0xa},
-  {0x4, 0x5, 0x6, 0xb},
-  {0x7, 0x8, 0x9, 0xc},
-  {0xe, 0x0, 0xf, 0xd}
+  {0x1, 0x2, 0x3, 0xA},
+  {0x4, 0x5, 0x6, 0xB},
+  {0x7, 0x8, 0x9, 0xC},
+  {0xF, 0x0, 0xE, 0xD}
 };
 const uint8_t seven_segments[16] = {
   0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b,
@@ -23,9 +23,12 @@ const uint8_t seven_segments[16] = {
 
 uint8_t operand1[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 uint8_t operand2[8];
+uint8_t arithmeticOperator = 0x0;
 uint8_t empty_disp[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}; //'xxxxxxxx'
 uint8_t error_array[8] = {0x05, 0x1D, 0x05, 0x05, 0x4F, 0x0, 0x0, 0x0}; // 'rorrExxx'
-
+volatile long now = 0;
+volatile long last_button_press = 0 ;
+volatile long last_keypad_press = 0;
 
 /*** DECLARE FUNCTIONS***/
 void setup_hardware();
@@ -34,25 +37,31 @@ void display_data();
 void display_array();
 void clear_display();
 void display_error();
-//void check();
+void setup_hardware_interrupts();
+void check_buttons();
+void check_keypad();
+void add_value_to_array(uint8_t value, uint8_t array[]);
+void clear_dispay_array(uint8_t array[]);
 
 /*** SETUP ***/
 void setup(){
   Serial.begin(9600);
   setup_hardware();
   setup_timer();
+  setup_hardware_interrupts();
+  display_data(1, 0x7E);
 }
 
 /*** FUNCTIONS ***/
 void setup_hardware() {
 
   //Setup switches
-  pinMode(A4, INPUT);
-  pinMode(A5, INPUT);
+  pinMode(A4, INPUT); //Left switch
+  pinMode(A5, INPUT); //Rigth switch
 
   // Setup buttons
-  pinMode(8, INPUT_PULLUP);
-  pinMode(9, INPUT_PULLUP);
+  pinMode(8, INPUT_PULLUP); //Left Button
+  pinMode(9, INPUT_PULLUP); //Right Button
   pinMode(2, INPUT);
 
   // Setup Keypad
@@ -126,32 +135,114 @@ void display_error(){
   return;
 }
 
+void clear_dispay_array(uint8_t array[]){
+  for(int i=0; i<8; i++){
+    array[i] = 0x0;
+  }
+  return;
+}
+
+void setup_hardware_interrupts(){
+  attachInterrupt(digitalPinToInterrupt(2), check_buttons, CHANGE);  //Checks buttons
+  attachInterrupt(digitalPinToInterrupt(3), check_keypad, CHANGE);  //Checks keypad
+  return;
+}
+
+void check_buttons(){
+  now = millis();
+  if (now-last_button_press > 250){
+    last_button_press = now;
+
+    if(digitalRead(8)){ //Right button pressed
+      if(arithmeticOperator==0x0){
+        clear_dispay_array(operand1);
+        display_data(1, 0x7E);  // Display "0"
+      }else{
+        clear_dispay_array(operand2);
+        arithmeticOperator = 0x0;
+        display_array(operand1);  //Display "Operand 1"
+      }
+
+
+    }
+    if(digitalRead(9)){ //Left button pressed
+      //negate_operand();
+    }
+  }
+  return;
+}
+
+void check_keypad(){
+  now = millis();
+  if(now-last_keypad_press > 250){
+    last_keypad_press = now;
+    uint8_t key_pressed = 0xFF;
+
+    for(int i=4; i<8; i++){
+      for(int j=4; j<8; j++){ // Set all rows to 1
+        digitalWrite(j, 1);
+      }
+      digitalWrite(i, 0); //Set current row to 0
+      uint8_t is_key_pressed = (!digitalRead(A0) || // If column is pressed
+                                !digitalRead(A1) ||
+                                !digitalRead(A2) ||
+                                !digitalRead(A3));
+      if(is_key_pressed){  //Checks if key is pressed
+        int column = 0;
+        while(is_key_pressed>1){
+          column++;
+          is_key_pressed >>= 1;
+        }
+        key_pressed = keys[i-4][column];
+      }
+    }
+    for(int j=4; j<8; j++){
+      digitalWrite(j, 0);
+    }
+    if(key_pressed>=0 && key_pressed<=9){
+      if (arithmeticOperator==0x0){
+        //add to op 1
+        add_value_to_array(seven_segments[key_pressed], operand1);
+        display_array(operand1);
+      }
+      else{
+        //add to op 2
+        add_value_to_array(seven_segments[key_pressed], operand2);
+      }
+    }
+    else if(key_pressed>=0xA && key_pressed<=0xD){  // +, -, *, /
+      arithmeticOperator = key_pressed;
+    }
+    else if (key_pressed==0xE){ // =
+        Serial.println(" ");
+    }
+  }
+
+  return;
+}
+
+void add_value_to_array(uint8_t value, uint8_t array[]){
+
+  for(int i=6; i>=0; i--){
+    array[i+1] = array[i];
+  }
+  array[0] = value;
+  return;
+}
+
 int count = 0;
 
 ISR(TIMER1_COMPA_vect){
-  count++;
-  Serial.print("IRS count: ");
-  Serial.print(count);
-  Serial.print("\n");
-  bool left_switch = digitalRead(A4);
-  if(!left_switch && count==30){  //When left switch toggle left & 30 sec have passed
-    clear_display();
-    count = 0;
-    delay(2000);
-  }
-  else if(left_switch && count==5){ //When left switch toggle right & 5 sec have passed
-    clear_display();
-    count = 0;
-    delay(2000);
-  }
-  display_error();
+  // count++;
+  // Serial.print("IRS count: ");
+  // Serial.print(count);
+  // Serial.print("\n");
+
  }
 
 
 /*** MAIN LOOP***/
 void loop(){
-  // Serial.print("Timer: ");
-  // Serial.print(count);
-  // Serial.print("\n");
-  // delay(250);
+
+
 }
