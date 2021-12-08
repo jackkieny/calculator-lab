@@ -29,8 +29,7 @@ uint8_t error_array[8] = {0x05, 0x1D, 0x05, 0x05, 0x4F, 0x0, 0x0, 0x0}; // 'rorr
 
 /*** DECLARE FUNCTIONS***/
 void setup_hardware();
-void setup_timer1();
-void setup_timer2();
+void setup_timer();
 void display_data();
 void display_array();
 void clear_display();
@@ -40,8 +39,7 @@ void display_error();
 void setup(){
   Serial.begin(9600);
   setup_hardware();
-  setup_timer1();
-  setup_timer2();
+  setup_timer();
 }
 
 /*** FUNCTIONS ***/
@@ -79,47 +77,24 @@ void setup_hardware() {
   return;
 }
 
-void setup_timer1(){
+void setup_timer(){
   cli();  // Pause interrupts during setup
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
 
-  // Set compare match register to 30kHz, must be < 65535
-  OCR1A = 67; // (16000000) / ((8*30000)-1) = 66.667
+  // Set compare match register to 5kHz, must be < 65535
+  OCR1A = 15625; // 16000000 / 1024 = 15625
 
   // Enable CTC mode
   TCCR1A |= (1 << WGM12);
 
-  // Set prescalar to 8
-  TCCR1A |= (1 << CS11);
+  // Set prescalar to 1024
+  TCCR1A |= (1 << CS10);
+  TCCR1A |= (1 << CS12);
 
   // Enable reset timer on interrupt
   TIMSK1 |= (1 << OCIE1A);
-
-  sei();  // Resume interrupts
-  return;
-}
-
-void setup_timer2(){
-  cli();  // Pause interrupts during setup
-
-  TCCR2A = 0; // Set register to 0
-  TCCR2B = 0; // Set register to 0
-  TCNT2 = 0;  // Set intial count value to 0
-
-  // Set compare match register to 5kHz seconds, must be < 255
-  OCR2A = 100; // (16000000) / ((64 * 5000) - 1)) = 100
-
-  // Enable CTC mode
-  TCCR2A |= (1 << WGM21);
-
-  // Set prescalar to 32
-  TCCR2B |= (1 << CS21);
-  TCCR2B |= (1 << CS20);
-
-  // Enable reset time on interrupt
-  TIMSK2 |= (1 << OCIE2A);
 
   sei();  // Resume interrupts
   return;
@@ -150,24 +125,22 @@ void display_error(){
   return;
 }
 
-bool flag = false;
- // ISR(TIMER2_COMPA_vect){
- //    if(flag){
- //      display_array(error_array);
- //      flag = false;
- //    }else{
- //      clear_display();
- //      flag = true;
- //    }
- //  }
+int count = 0;
+ISR(TIMER1_COMPA_vect){
+  count++;
+  if(count=5){
+    display_array(error_array);
+    count = 0;
+  }
+ }
 /*** MAIN LOOP***/
 void loop(){
-  Serial.print(digitalRead(A4));
-  if (digitalRead(A5)){
-    display_array(error_array);
-  }else{
-    clear_display();
-  }
-  delay(250);
+//   Serial.print(digitalRead(A4));
+//   if (digitalRead(A5)){
+//     display_array(error_array);
+//   }else{
+//     clear_display();
+//   }
+//   delay(250);
 
 }
