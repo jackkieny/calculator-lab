@@ -137,8 +137,25 @@ void display_error(){
 }
 
 void clear_dispay_array(uint8_t array[]){
+
   for(int i=0; i<8; i++){
     array[i] = 0x0;
+  }
+  return;
+}
+
+void negate_operand(uint8_t array[]) {
+  for(int i = 7; i >= 0; i--) {
+    //If Decimal is already negative make remove negative symbol
+    if(array[i] == 0x01) {
+      array[i] = 0x0;
+      display_array(array);
+      break;
+    } else if(array[i] != 0x0) {
+      array[i+1] = 0x01;
+      display_array(array);
+      break;
+    }
   }
   return;
 }
@@ -172,7 +189,7 @@ void check_buttons(){
       if(arithmeticOperator==0x0){
         negate_operand(operand1);
         display_array(operand1);
-      }else
+      } else {
         negate_operand(operand2);
         display_array(operand2);
       }
