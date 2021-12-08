@@ -179,26 +179,33 @@ void check_keypad(){
     uint8_t key_pressed = 0xFF;
 
     for(int i=4; i<8; i++){
+
       for(int j=4; j<8; j++){ // Set all rows to 1
         digitalWrite(j, 1);
       }
       digitalWrite(i, 0); //Set current row to 0
-      uint8_t is_key_pressed = (!digitalRead(A0) || // If column is pressed
-                                !digitalRead(A1) ||
-                                !digitalRead(A2) ||
-                                !digitalRead(A3));
-      if(is_key_pressed){  //Checks if key is pressed
-        int column = 0;
-        while(is_key_pressed>1){
-          column++;
-          is_key_pressed >>= 1;
-        }
+
+      int column = -1;
+      if(!digitalRead(A0)) {
+        column = 0;
+      } else if(!digitalRead(A1)) {
+        column = 1;
+      } else if(!digitalRead(A2)) {
+        column = 2;
+      } else if(!digitalRead(A4)) {
+        column = 3;
+      }
+
+      if(column != -1) {
         key_pressed = keys[i-4][column];
+
       }
     }
+
     for(int j=4; j<8; j++){
       digitalWrite(j, 0);
     }
+
     if(key_pressed>=0 && key_pressed<=9){
       if (arithmeticOperator==0x0){
         //add to op 1
