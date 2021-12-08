@@ -156,10 +156,12 @@ void check_buttons(){
     if(digitalRead(8)){ //Right button pressed
       if(arithmeticOperator==0x0){
         clear_dispay_array(operand1);
+        clear_display();
         display_data(1, 0x7E);  // Display "0"
       }else{
         clear_dispay_array(operand2);
         arithmeticOperator = 0x0;
+        clear_display();
         display_array(operand1);  //Display "Operand 1"
       }
 
