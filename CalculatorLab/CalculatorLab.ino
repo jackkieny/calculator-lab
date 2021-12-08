@@ -7,6 +7,7 @@
 ***/
 
 #include "cowpi.h"
+#include "math.h"
 
 /*** INITIALIZE ***/
 const uint8_t keys[4][4] = {
@@ -43,6 +44,8 @@ void check_keypad();
 void add_value_to_array(uint8_t value, uint8_t array[]);
 void clear_dispay_array(uint8_t array[]);
 void negate_operand(uint8_t array[]);
+void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp);
+void convert_res_to_array(int result, bool is_negative);
 
 
 /*** SETUP ***/
@@ -138,25 +141,8 @@ void display_error(){
 }
 
 void clear_dispay_array(uint8_t array[]){
-
   for(int i=0; i<8; i++){
     array[i] = 0x0;
-  }
-  return;
-}
-
-void negate_operand(uint8_t array[]) {
-  for(int i = 7; i >= 0; i--) {
-    //If Decimal is already negative make remove negative symbol
-    if(array[i] == 0x01) {
-      array[i] = 0x0;
-      display_array(array);
-      break;
-    } else if(array[i] != 0x0) {
-      array[i+1] = 0x01;
-      display_array(array);
-      break;
-    }
   }
   return;
 }
@@ -190,7 +176,7 @@ void check_buttons(){
       if(arithmeticOperator==0x0){
         negate_operand(operand1);
         display_array(operand1);
-      } else {
+      }else{
         negate_operand(operand2);
         display_array(operand2);
       }
@@ -248,14 +234,12 @@ void check_keypad(){
       arithmeticOperator = key_pressed;
     }
     else if (key_pressed==0xE){ // =
-        Serial.println(" ");
+        perform_operation(operand1, operand2, arithmeticOperator);
     }
   }
 
   return;
 }
-
-
 
 void add_value_to_array(uint8_t value, uint8_t array[]){
 
@@ -263,6 +247,70 @@ void add_value_to_array(uint8_t value, uint8_t array[]){
     array[i+1] = array[i];
   }
   array[0] = value;
+  return;
+}
+
+void convert_res_to_array(int result, bool is_negative){
+
+  //do modulo code here
+
+  if(is_negative){
+    clear_dispay_array(operand2);
+    arithmeticOperator = 0x0;
+    negate_operand(operand1);
+  }
+  display_array()
+}
+
+void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
+  if(arithOp==0x0){
+    return;
+  }
+  bool is_negative = false;
+  int valA = 0, valB=0, result=0;
+  //Convert first array to int
+  for (int i=0; i<8; i++){
+      if(op1[i]==0x30){valA += 1*pow(10,i);} // If 1
+      else if (op1[i]==0x6D){valA += 2*pow(10,i);}  // If 2
+      else if (op1[i]==0x79){valA += 3*pow(10,i);}  // If 3
+      else if (op1[i]==0x33){valA += 4*pow(10,i);}  // If 4
+      else if (op1[i]==0x5B){valA += 5*pow(10,i);}  // If 5
+      else if (op1[i]==0x5F){valA += 6*pow(10,i);}  // If 6
+      else if (op1[i]==0x70){valA += 7*pow(10,i);}  // If 7
+      else if (op1[i]==0x7F){valA += 8*pow(10,i);}  // If 8
+      else if (op1[i]==0x73){valA += 9*pow(10,i);}  // If 9
+      else if (op1[7]==0x01){valA * -1;}  // Negate
+  }
+  for (int i=0; i<8; i++){
+    if(op2[i]==0x30){valB += 1*pow(10,i);} // If 1
+    else if (op1[i]==0x6D){valB += 2*pow(10,i);}  // If 2
+    else if (op1[i]==0x79){valB += 3*pow(10,i);}  // If 3
+    else if (op1[i]==0x33){valB += 4*pow(10,i);}  // If 4
+    else if (op1[i]==0x5B){valB += 5*pow(10,i);}  // If 5
+    else if (op1[i]==0x5F){valB += 6*pow(10,i);}  // If 6
+    else if (op1[i]==0x70){valB += 7*pow(10,i);}  // If 7
+    else if (op1[i]==0x7F){valB += 8*pow(10,i);}  // If 8
+    else if (op1[i]==0x73){valB += 9*pow(10,i);}  // If 9
+    else if (op1[7]==0x01){valB * -1;}  // Negate
+  }
+
+  if (arithOp==0xA){
+    result = valA + valB;
+    if(result != abs(result)){is_negative=true;}
+    convert_res_to_array(result, is_negative);
+  }else if(arithOp==0xB){
+    result = valA - valB;
+    if(result != abs(result)){is_negative=true;}
+    convert_res_to_array(result, is_negative);
+  }else if(arithOp==0xC){
+    result = valA * valB;
+    if(result != abs(result)){is_negative=true;}
+    convert_res_to_array(result, is_negative);
+  }else if(arithOp==0xD){
+    result = valA / valB;
+    if(result != abs(result)){is_negative=true;}
+    convert_res_to_array(result, is_negative);
+  }
   return;
 }
 
