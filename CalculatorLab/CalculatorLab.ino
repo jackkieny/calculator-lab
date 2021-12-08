@@ -276,14 +276,21 @@ void add_value_to_array(uint8_t value, uint8_t array[]){
 
 void convert_res_to_array(int result, bool is_negative){
 
+  uint8_t buffer[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
   clear_dispay_array(operand1);
   while(result > 10){
     int currentValue = result % 10;
     result /= 10;
-    add_value_to_array(seven_segments[currentValue], operand1);
+    add_value_to_array(seven_segments[currentValue], buffer);
   }
   result = abs(result);
-  add_value_to_array(seven_segments[result], operand1);
+  add_value_to_array(seven_segments[result], buffer);
+
+  for(int i = 0; i < 8; i++) {
+    if(buffer[i] != 0x0) {
+      add_value_to_array(buffer[i], operand1);
+    }
+  }
 
   if(is_negative){
     clear_dispay_array(operand2);
@@ -299,6 +306,8 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     return;
   }
   bool is_negative = false;
+  bool is_valA_negative = false;
+  bool is_valB_negative = false;
   int valA = 0, valB=0, result=0;
   //Convert first array to int
   for (int i=0; i<8; i++){
@@ -311,8 +320,13 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
       else if (op1[i]==0x70){valA += 7*pow(10,i);}  // If 7
       else if (op1[i]==0x7F){valA += 8*pow(10,i);}  // If 8
       else if (op1[i]==0x73){valA += 9*pow(10,i);}  // If 9
-      else if (op1[i]==0x01){valA * -1;}  // Negate
+      else if (op1[i]==0x01){is_valA_negative = true;}  // Negate
   }
+
+  if(is_valA_negative) {
+    valA *= -1;
+  }
+
   for (int i=0; i<8; i++){
     if(op2[i]==0x30){valB += 1*pow(10,i);} // If 1
     else if (op2[i]==0x6D){valB += 2*pow(10,i);}  // If 2
@@ -323,7 +337,11 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     else if (op2[i]==0x70){valB += 7*pow(10,i);}  // If 7
     else if (op2[i]==0x7F){valB += 8*pow(10,i);}  // If 8
     else if (op2[i]==0x73){valB += 9*pow(10,i);}  // If 9
-    else if (op2[i]==0x01){valB * -1;}  // Negate
+    else if (op2[i]==0x01){is_valB_negative = true;}  // Negate
+  }
+
+  if(is_valB_negative) {
+    valB *= -1;
   }
 
   Serial.println(valA);
