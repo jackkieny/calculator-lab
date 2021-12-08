@@ -147,6 +147,22 @@ void clear_dispay_array(uint8_t array[]){
   return;
 }
 
+void negate_operand(uint8_t array[]) {
+  for(int i = 7; i >= 0; i--) {
+    //If Decimal is already negative make remove negative symbol
+    if(array[i] == 0x01) {
+      array[i] = 0x0;
+      display_array(array);
+      break;
+    } else if(array[i] != 0x0) {
+      array[i+1] = 0x01;
+      display_array(array);
+      break;
+    }
+  }
+  return;
+}
+
 void setup_hardware_interrupts(){
   attachInterrupt(digitalPinToInterrupt(2), check_buttons, CHANGE);  //Checks buttons
   attachInterrupt(digitalPinToInterrupt(3), check_keypad, CHANGE);  //Checks keypad
@@ -169,9 +185,8 @@ void check_buttons(){
         clear_display();
         display_array(operand1);  //Display "Operand 1"
       }
-
-
     }
+
     if(digitalRead(9)){ //Left button pressed
       if(arithmeticOperator==0x0){
         negate_operand(operand1);
@@ -200,12 +215,16 @@ void check_keypad(){
 
       int column = -1;
       if(!digitalRead(A0)) {
+        // Serial.println("Column 0");
         column = 0;
       } else if(!digitalRead(A1)) {
+        // Serial.println("Column 1");
         column = 1;
       } else if(!digitalRead(A2)) {
+        // Serial.println("Column 2");
         column = 2;
-      } else if(!digitalRead(A4)) {
+      } else if(!digitalRead(A3)) {
+        // Serial.println("Column 3");
         column = 3;
       }
 
@@ -219,18 +238,23 @@ void check_keypad(){
       digitalWrite(j, 0);
     }
 
-    if(key_pressed>=0 && key_pressed<=9){
+    // Serial.print(key_pressed);
+    if(key_pressed >= 0x0 && key_pressed <= 0x9){
+      Serial.println("Number was pressed");
       if (arithmeticOperator==0x0 && operand1[7] == 0x0){
         //add to op 1
         add_value_to_array(seven_segments[key_pressed], operand1);
         display_array(operand1);
       }
-      else if(operand2[7] == 0x0){
+      else if(arithmeticOperator!=0x0 && operand2[7] == 0x0){
         //add to op 2
+        clear_display();
         add_value_to_array(seven_segments[key_pressed], operand2);
+        display_array(operand2);
       }
     }
-    else if(key_pressed>=0xA && key_pressed<=0xD){  // +, -, *, /
+    else if(key_pressed >= 0xA && key_pressed <= 0xD){  // +, -, *, /
+      Serial.println("Operator was pressed");
       arithmeticOperator = key_pressed;
     }
     else if (key_pressed==0xE){ // =
@@ -252,14 +276,22 @@ void add_value_to_array(uint8_t value, uint8_t array[]){
 
 void convert_res_to_array(int result, bool is_negative){
 
-  //do modulo code here
+  clear_dispay_array(operand1);
+  while(result > 10){
+    int currentValue = result % 10;
+    result /= 10;
+    add_value_to_array(seven_segments[currentValue], operand1);
+  }
+  result = abs(result);
+  add_value_to_array(seven_segments[result], operand1);
 
   if(is_negative){
     clear_dispay_array(operand2);
     arithmeticOperator = 0x0;
     negate_operand(operand1);
   }
-  display_array()
+  display_array(operand1);
+  return;
 }
 
 void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
@@ -279,21 +311,26 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
       else if (op1[i]==0x70){valA += 7*pow(10,i);}  // If 7
       else if (op1[i]==0x7F){valA += 8*pow(10,i);}  // If 8
       else if (op1[i]==0x73){valA += 9*pow(10,i);}  // If 9
-      else if (op1[7]==0x01){valA * -1;}  // Negate
+      else if (op1[i]==0x01){valA * -1;}  // Negate
   }
   for (int i=0; i<8; i++){
     if(op2[i]==0x30){valB += 1*pow(10,i);} // If 1
-    else if (op1[i]==0x6D){valB += 2*pow(10,i);}  // If 2
-    else if (op1[i]==0x79){valB += 3*pow(10,i);}  // If 3
-    else if (op1[i]==0x33){valB += 4*pow(10,i);}  // If 4
-    else if (op1[i]==0x5B){valB += 5*pow(10,i);}  // If 5
-    else if (op1[i]==0x5F){valB += 6*pow(10,i);}  // If 6
-    else if (op1[i]==0x70){valB += 7*pow(10,i);}  // If 7
-    else if (op1[i]==0x7F){valB += 8*pow(10,i);}  // If 8
-    else if (op1[i]==0x73){valB += 9*pow(10,i);}  // If 9
-    else if (op1[7]==0x01){valB * -1;}  // Negate
+    else if (op2[i]==0x6D){valB += 2*pow(10,i);}  // If 2
+    else if (op2[i]==0x79){valB += 3*pow(10,i);}  // If 3
+    else if (op2[i]==0x33){valB += 4*pow(10,i);}  // If 4
+    else if (op2[i]==0x5B){valB += 5*pow(10,i);}  // If 5
+    else if (op2[i]==0x5F){valB += 6*pow(10,i);}  // If 6
+    else if (op2[i]==0x70){valB += 7*pow(10,i);}  // If 7
+    else if (op2[i]==0x7F){valB += 8*pow(10,i);}  // If 8
+    else if (op2[i]==0x73){valB += 9*pow(10,i);}  // If 9
+    else if (op2[i]==0x01){valB * -1;}  // Negate
   }
 
+  Serial.println(valA);
+  Serial.println(valB);
+
+  arithmeticOperator = 0x0;
+  clear_dispay_array(operand2);
   if (arithOp==0xA){
     result = valA + valB;
     if(result != abs(result)){is_negative=true;}
