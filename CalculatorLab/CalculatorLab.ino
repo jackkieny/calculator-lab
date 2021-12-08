@@ -42,6 +42,7 @@ void check_buttons();
 void check_keypad();
 void add_value_to_array(uint8_t value, uint8_t array[]);
 void clear_dispay_array(uint8_t array[]);
+void negate_operand(uint8_t array[]);
 
 /*** SETUP ***/
 void setup(){
@@ -168,7 +169,13 @@ void check_buttons(){
 
     }
     if(digitalRead(9)){ //Left button pressed
-      //negate_operand();
+      if(arithmeticOperator==0x0){
+        negate_operand(operand1);
+        display_array(operand1);
+      }else
+        negate_operand(operand2);
+        display_array(operand2);
+      }
     }
   }
   return;
