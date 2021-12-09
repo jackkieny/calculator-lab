@@ -255,7 +255,8 @@ void check_keypad(){
       digitalWrite(j, 0);
     }
 
-    // Serial.print(key_pressed);
+    Serial.print("The Key pressed is: ");
+    Serial.println(key_pressed);
     if(key_pressed >= 0x0 && key_pressed <= 0x9){
       Serial.println("Number was pressed");
       if (arithmeticOperator==0x0 && operand1[7] == 0x0){
@@ -318,10 +319,13 @@ void convert_res_to_array(int result, bool is_negative){
   }
 
   if(is_negative){
-    clear_dispay_array(operand2);
-    arithmeticOperator = 0x0;
+    // clear_dispay_array(operand2);
+    // arithmeticOperator = 0x0;
     negate_operand(operand1);
   }
+  //I dont think we need these two lines because it already does this in perform_operation
+  clear_dispay_array(operand2);
+  arithmeticOperator = 0x0;
   display_array(operand1);
   return;
 }
@@ -335,72 +339,102 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
   bool is_valB_negative = false;
   int valA = 0, valB=0, result=0;
   //Convert first array to int
-  for (int i=0; i<8; i++){
-      if(op1[i]==0x30){valA += 1*pow(10,i);} // If 1
-      else if (op1[i]==0x6D){valA += 2*pow(10,i);}  // If 2
-      else if (op1[i]==0x79){valA += 3*pow(10,i);}  // If 3
-      else if (op1[i]==0x33){valA += 4*pow(10,i);}  // If 4
-      else if (op1[i]==0x5B){valA += 5*pow(10,i);}  // If 5
-      else if (op1[i]==0x5F){valA += 6*pow(10,i);}  // If 6
-      else if (op1[i]==0x70){valA += 7*pow(10,i);}  // If 7
-      else if (op1[i]==0x7F){valA += 8*pow(10,i);}  // If 8
-      else if (op1[i]==0x73){valA += 9*pow(10,i);}  // If 9
-      else if (op1[i]==0x01){is_valA_negative = true;}  // Negate
-  }
+  // Serial.println("Value A is: ");
+  for (int i=7; i>= 0; i--){
+      // Serial.print(op1[i]);
+      // Serial.print(" ");
+      if(op1[i]==0x01) {
+        is_valA_negative = true;
+      } else if(op1[i] != 0x0) {
+        valA *= 10;
+      }
 
+      if(op1[i]==0x30){valA += 1;} // If 1
+      else if (op1[i]==0x6D){valA += 2;}  // If 2
+      else if (op1[i]==0x79){valA += 3;}  // If 3
+      else if (op1[i]==0x33){valA += 4;}  // If 4
+      else if (op1[i]==0x5B){valA += 5;}  // If 5
+      else if (op1[i]==0x5F){valA += 6;}  // If 6
+      else if (op1[i]==0x70){valA += 7;}  // If 7
+      else if (op1[i]==0x7F){valA += 8;}  // If 8
+      else if (op1[i]==0x73){valA += 9;}  // If 9
+      // Serial.print(valA);
+      // Serial.println(" ");
+  }
+  // Serial.println(" ");
   if(is_valA_negative) {
     valA *= -1;
   }
 
-  for (int i=0; i<8; i++){
-    if(op2[i]==0x30){valB += 1*pow(10,i);} // If 1
-    else if (op2[i]==0x6D){valB += 2*pow(10,i);}  // If 2
-    else if (op2[i]==0x79){valB += 3*pow(10,i);}  // If 3
-    else if (op2[i]==0x33){valB += 4*pow(10,i);}  // If 4
-    else if (op2[i]==0x5B){valB += 5*pow(10,i);}  // If 5
-    else if (op2[i]==0x5F){valB += 6*pow(10,i);}  // If 6
-    else if (op2[i]==0x70){valB += 7*pow(10,i);}  // If 7
-    else if (op2[i]==0x7F){valB += 8*pow(10,i);}  // If 8
-    else if (op2[i]==0x73){valB += 9*pow(10,i);}  // If 9
-    else if (op2[i]==0x01){is_valB_negative = true;}  // Negate
-  }
+  // Serial.println("Value B is: ");
+  for (int i = 7; i >= 0; i--){
+    // Serial.print(op2[i]);
+    // Serial.print(" ");
+    if(op2[i]==0x01) {
+      is_valB_negative = true;
+    } else if(op2[i] != 0x0) {
+      valB *= 10;
+    }
 
+    if(op2[i]==0x30){valB += 1;} // If 1
+    else if (op2[i]==0x6D){valB += 2;}  // If 2
+    else if (op2[i]==0x79){valB += 3;}  // If 3
+    else if (op2[i]==0x33){valB += 4;}  // If 4
+    else if (op2[i]==0x5B){valB += 5;}  // If 5
+    else if (op2[i]==0x5F){valB += 6;}  // If 6
+    else if (op2[i]==0x70){valB += 7;}  // If 7
+    else if (op2[i]==0x7F){valB += 8;}  // If 8
+    else if (op2[i]==0x73){valB += 9;}  // If 9
+    // Serial.print(valB);
+    // Serial.println(" ");
+  }
+  // Serial.println(" ");
   if(is_valB_negative) {
     valB *= -1;
   }
 
-  Serial.println(valA);
-  Serial.println(valB);
+  // Serial.print("Value A is: ");
+  // Serial.println(valA);
+
+  // Serial.print("Value B is: ");
+  // Serial.println(valB);
 
   arithmeticOperator = 0x0;
   clear_dispay_array(operand2);
   if (arithOp==0xA){
     result = valA + valB;
-    if(result != abs(result)){is_negative=true;}
-    convert_res_to_array(result, is_negative);
+    
+
   }else if(arithOp==0xB){
     result = valA - valB;
-    if(result != abs(result)){is_negative=true;}
-    convert_res_to_array(result, is_negative);
+
   }else if(arithOp==0xC){
     result = valA * valB;
-    if(result != abs(result)){is_negative=true;}
-    convert_res_to_array(result, is_negative);
+
   }else if(arithOp==0xD){
     if(valB==0){
       handle_div_by_0();
     }else{
       result = valA / valB;
-      if(result != abs(result)){is_negative=true;}
-      convert_res_to_array(result, is_negative);
     }
   }
+
+  if(arithOp==0xD && valB==0) {
+    //This is a redundancy for the above divide by zero case
+    Serial.println("Divide by Zero");
+  } else {
+    if(result != abs(result)) {
+      is_negative=true;
+    }
+    convert_res_to_array(result, is_negative);
+  }
+
   return;
 }
 
 ISR(TIMER1_COMPA_vect){
   timer++;
-  Serial.println(timer);
+  // Serial.println(timer);
   if(timer==30 && !digitalRead(A4)){
     awake = false;
     clear_display();
