@@ -177,6 +177,11 @@ void setup_hardware_interrupts(){
 void check_buttons(){
   if(!awake){
     awake = true;
+    if(arithmeticOperator!=0x0){
+      display_array(operand2);
+    }else{
+      display_array(operand1);
+    }
     return; //do nothing
   }
 
@@ -214,6 +219,15 @@ void check_buttons(){
 void check_keypad(){
   if(!awake){
     awake = true;
+    if(arithmeticOperator!=0x0){
+      display_array(operand2);
+    }else{
+      if(operand1 == empty_disp){
+        display_data(1, 0x7E);
+      }else{
+        display_array(operand1);
+      }
+    }
     return; //do nothing
   }
 
@@ -320,7 +334,7 @@ void convert_res_to_array(long result, bool is_negative){
     arithmeticOperator = 0x0;
     negate_operand(operand1);
   }
-  
+
   display_array(operand1);
   return;
 }
@@ -335,7 +349,7 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
   long valA = 0, valB=0, result=0;
   //Convert first array to int
   for (int i=7; i>= 0; i--){
-      
+
       if(op1[i]==0x01) {
         is_valA_negative = true;
       } else if(op1[i] != 0x0) {
@@ -407,12 +421,12 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
 
   // Serial.print("The Result is: ");
   // Serial.println(result);
-  
+
   if(arithOp==0xD && valB==0) {
     //This is a redundancy for the above divide by zero case
     Serial.println("Divide by Zero");
   } else {
-    
+
     if(result < 0) {
       Serial.println("is negative is true");
       is_negative=true;
