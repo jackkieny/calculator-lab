@@ -48,7 +48,7 @@ void add_value_to_array(uint8_t value, uint8_t array[]);
 void clear_dispay_array(uint8_t array[]);
 void negate_operand(uint8_t array[]);
 void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp);
-void convert_res_to_array(int result, bool is_negative);
+void convert_res_to_array(long result, bool is_negative);
 void handle_div_by_0();
 
 
@@ -85,15 +85,14 @@ void setup_hardware() {
   pinMode(3, INPUT);
 
   // Setup Display
-  // Copied from DisplayTest.ino
   pinMode(SS, OUTPUT);
   pinMode(MOSI, OUTPUT);
   pinMode(SCK, OUTPUT);
   clear_display();
-  display_data(0xA, 8);     // intensity at 17/32
-  display_data(0xB, 7);     // scan all eight digits
-  display_data(0xC, 1);     // take display out of shutdown mode
-  display_data(0xF, 0);     // take display out of test mode, just in case
+  display_data(0xA, 8); // intensity at 17/32
+  display_data(0xB, 7); // scan all eight digits
+  display_data(0xC, 1); // take display out of shutdown mode
+  display_data(0xF, 0); // take display out of test mode, just in case
   return;
 }
 
@@ -159,6 +158,7 @@ void negate_operand(uint8_t array[]) {
       array[i] = 0x0;
       display_array(array);
       break;
+
     } else if(array[i] != 0x0) {
       array[i+1] = 0x01;
       display_array(array);
@@ -232,22 +232,17 @@ void check_keypad(){
 
       int column = -1;
       if(!digitalRead(A0)) {
-        // Serial.println("Column 0");
         column = 0;
       } else if(!digitalRead(A1)) {
-        // Serial.println("Column 1");
         column = 1;
       } else if(!digitalRead(A2)) {
-        // Serial.println("Column 2");
         column = 2;
       } else if(!digitalRead(A3)) {
-        // Serial.println("Column 3");
         column = 3;
       }
 
       if(column != -1) {
         key_pressed = keys[i-4][column];
-
       }
     }
 
@@ -255,27 +250,20 @@ void check_keypad(){
       digitalWrite(j, 0);
     }
 
-    Serial.print("The Key pressed is: ");
-    Serial.println(key_pressed);
     if(key_pressed >= 0x0 && key_pressed <= 0x9){
-      Serial.println("Number was pressed");
+
       if (arithmeticOperator==0x0 && operand1[7] == 0x0){
-        //add to op 1
         add_value_to_array(seven_segments[key_pressed], operand1);
         display_array(operand1);
-      }
-      else if(arithmeticOperator!=0x0 && operand2[7] == 0x0){
-        //add to op 2
+      } else if(arithmeticOperator!=0x0 && operand2[7] == 0x0){
         clear_display();
         add_value_to_array(seven_segments[key_pressed], operand2);
         display_array(operand2);
       }
-    }
-    else if(key_pressed >= 0xA && key_pressed <= 0xD){  // +, -, *, /
-      Serial.println("Operator was pressed");
-      arithmeticOperator = key_pressed;
-    }
-    else if (key_pressed==0xE){ // =
+
+    } else if(key_pressed >= 0xA && key_pressed <= 0xD){  // +, -, *, /
+        arithmeticOperator = key_pressed;
+    } else if (key_pressed==0xE){ // =
         perform_operation(operand1, operand2, arithmeticOperator);
     }
   }
@@ -300,7 +288,13 @@ void handle_div_by_0(){
   display_error();
 }
 
-void convert_res_to_array(int result, bool is_negative){
+void convert_res_to_array(long result, bool is_negative){
+
+  if(result >= 100000000 || result <= -10000000) {
+    clear_display();
+    display_error();
+    return;
+  }
 
   uint8_t buffer[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
   clear_dispay_array(operand1);
@@ -309,6 +303,7 @@ void convert_res_to_array(int result, bool is_negative){
     result /= 10;
     add_value_to_array(seven_segments[currentValue], buffer);
   }
+
   result = abs(result);
   add_value_to_array(seven_segments[result], buffer);
 
@@ -319,11 +314,9 @@ void convert_res_to_array(int result, bool is_negative){
   }
 
   if(is_negative){
-    // clear_dispay_array(operand2);
-    // arithmeticOperator = 0x0;
     negate_operand(operand1);
   }
-  //I dont think we need these two lines because it already does this in perform_operation
+  
   clear_dispay_array(operand2);
   arithmeticOperator = 0x0;
   display_array(operand1);
@@ -337,12 +330,10 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
   bool is_negative = false;
   bool is_valA_negative = false;
   bool is_valB_negative = false;
-  int valA = 0, valB=0, result=0;
+  long valA = 0, valB=0, result=0;
   //Convert first array to int
-  // Serial.println("Value A is: ");
   for (int i=7; i>= 0; i--){
-      // Serial.print(op1[i]);
-      // Serial.print(" ");
+
       if(op1[i]==0x01) {
         is_valA_negative = true;
       } else if(op1[i] != 0x0) {
@@ -358,18 +349,14 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
       else if (op1[i]==0x70){valA += 7;}  // If 7
       else if (op1[i]==0x7F){valA += 8;}  // If 8
       else if (op1[i]==0x73){valA += 9;}  // If 9
-      // Serial.print(valA);
-      // Serial.println(" ");
   }
-  // Serial.println(" ");
+
   if(is_valA_negative) {
     valA *= -1;
   }
 
-  // Serial.println("Value B is: ");
   for (int i = 7; i >= 0; i--){
-    // Serial.print(op2[i]);
-    // Serial.print(" ");
+
     if(op2[i]==0x01) {
       is_valB_negative = true;
     } else if(op2[i] != 0x0) {
@@ -385,25 +372,17 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     else if (op2[i]==0x70){valB += 7;}  // If 7
     else if (op2[i]==0x7F){valB += 8;}  // If 8
     else if (op2[i]==0x73){valB += 9;}  // If 9
-    // Serial.print(valB);
-    // Serial.println(" ");
   }
-  // Serial.println(" ");
+
   if(is_valB_negative) {
     valB *= -1;
   }
 
-  // Serial.print("Value A is: ");
-  // Serial.println(valA);
-
-  // Serial.print("Value B is: ");
-  // Serial.println(valB);
-
   arithmeticOperator = 0x0;
   clear_dispay_array(operand2);
+
   if (arithOp==0xA){
     result = valA + valB;
-    
 
   }else if(arithOp==0xB){
     result = valA - valB;
@@ -423,6 +402,7 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     //This is a redundancy for the above divide by zero case
     Serial.println("Divide by Zero");
   } else {
+    
     if(result != abs(result)) {
       is_negative=true;
     }
@@ -433,21 +413,19 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
 }
 
 ISR(TIMER1_COMPA_vect){
+
   timer++;
-  // Serial.println(timer);
   if(timer==30 && !digitalRead(A4)){
     awake = false;
     clear_display();
-  }
-  else if(timer == 5 && digitalRead(A4)){
+
+  } else if(timer == 5 && digitalRead(A4)){
     awake = false;
     clear_display();
   }
  }
 
-
 /*** MAIN LOOP***/
 void loop(){
-
 
 }
