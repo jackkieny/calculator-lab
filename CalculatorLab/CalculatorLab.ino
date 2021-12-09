@@ -298,9 +298,11 @@ void convert_res_to_array(long result, bool is_negative){
 
   uint8_t buffer[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
   clear_dispay_array(operand1);
-  while(result > 10){
+  while(result > 10 || result < -10){
     int currentValue = result % 10;
     result /= 10;
+    // Serial.print("currentValue is :");
+    // Serial.println(currentValue);
     add_value_to_array(seven_segments[currentValue], buffer);
   }
 
@@ -314,11 +316,11 @@ void convert_res_to_array(long result, bool is_negative){
   }
 
   if(is_negative){
+    clear_dispay_array(operand2);
+    arithmeticOperator = 0x0;
     negate_operand(operand1);
   }
   
-  clear_dispay_array(operand2);
-  arithmeticOperator = 0x0;
   display_array(operand1);
   return;
 }
@@ -333,7 +335,7 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
   long valA = 0, valB=0, result=0;
   //Convert first array to int
   for (int i=7; i>= 0; i--){
-
+      
       if(op1[i]==0x01) {
         is_valA_negative = true;
       } else if(op1[i] != 0x0) {
@@ -354,6 +356,8 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
   if(is_valA_negative) {
     valA *= -1;
   }
+  // Serial.print("Value A is: ");
+  // Serial.println(valA);
 
   for (int i = 7; i >= 0; i--){
 
@@ -378,6 +382,9 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     valB *= -1;
   }
 
+  // Serial.print("Value B is: ");
+  // Serial.println(valB);
+
   arithmeticOperator = 0x0;
   clear_dispay_array(operand2);
 
@@ -398,12 +405,16 @@ void perform_operation(uint8_t op1[], uint8_t op2[], uint8_t arithOp){
     }
   }
 
+  // Serial.print("The Result is: ");
+  // Serial.println(result);
+  
   if(arithOp==0xD && valB==0) {
     //This is a redundancy for the above divide by zero case
     Serial.println("Divide by Zero");
   } else {
     
-    if(result != abs(result)) {
+    if(result < 0) {
+      Serial.println("is negative is true");
       is_negative=true;
     }
     convert_res_to_array(result, is_negative);
